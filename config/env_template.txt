@@ -1,0 +1,6 @@
+# Configuração da API Gemini
+# Copie este arquivo para .env e adicione sua chave da API
+GEMINI_API_KEY=sua_chave_aqui
+
+# Configurações opcionais
+GEMINI_MODEL=gemini-1.5-pro

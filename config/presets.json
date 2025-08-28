@@ -1,0 +1,42 @@
+[
+  {
+    "id": "78940094-658e-4c3c-966c-caed5c9d2d5b",
+    "name": "002-5",
+    "scope": "global",
+    "template_id": null,
+    "document_fingerprint": null,
+    "bbox_rel": {
+      "x0": 0.8156461462287506,
+      "y0": 0.014534055286406384,
+      "x1": 0.9998349562634098,
+      "y1": 0.6514676546024508
+    },
+    "page_filter": "all",
+    "padding_pct": 0.03,
+    "created_at": "2025-08-27T20:07:38.304216",
+    "updated_at": "2025-08-27T20:07:38.304216",
+    "use_count": 0,
+    "active": true,
+    "notes": "Criado na página 1"
+  },
+  {
+    "id": "2fa55301-7d18-40a8-99c2-4845f2a38eb3",
+    "name": "002-5_v2",
+    "scope": "global",
+    "template_id": null,
+    "document_fingerprint": null,
+    "bbox_rel": {
+      "x0": 0.818451889750784,
+      "y0": 0.00968937019093759,
+      "x1": 0.9955438191120647,
+      "y1": 0.658877172983756
+    },
+    "page_filter": "all",
+    "padding_pct": 0.03,
+    "created_at": "2025-08-27T20:14:40.742445",
+    "updated_at": "2025-08-27T20:14:40.742445",
+    "use_count": 0,
+    "active": true,
+    "notes": "Criado na página 1"
+  }
+]
