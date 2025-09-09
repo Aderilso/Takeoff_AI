@@ -9,6 +9,7 @@ from app.save_utils import save_crop_image
 from app.gemini_client import call_gemini_on_image
 from app.result_utils import extract_rows_from_model_payload, is_empty_extraction, get_table_name
 from app.aggregate import add_rows, add_report_entry
+from app.ui_compat import dataframe_fluid
 
 SYSTEM_PROMPT = (
     "Você é um extrator de TABELAS genérico. Retorne ESTRITAMENTE JSON no envelope "
@@ -74,7 +75,8 @@ def run_batch(files: List, *, bbox_rel: dict, api_key: str):
 
         # Atualiza tabela de status
         from app.aggregate import to_df_report
-        table_ph.dataframe(to_df_report(st), use_container_width=True, height=300)
+        with table_ph.container():
+            dataframe_fluid(to_df_report(st), height=300)
 
         try:
             count = process_single_pdf(f, bbox_rel=bbox_rel, api_key=api_key, page_index=0)
@@ -96,7 +98,8 @@ def run_batch(files: List, *, bbox_rel: dict, api_key: str):
         progress_ph.progress((i+1)/n)
         # Atualiza grid
         from app.aggregate import to_df_report
-        table_ph.dataframe(to_df_report(st), use_container_width=True, height=300)
+        with table_ph.container():
+            dataframe_fluid(to_df_report(st), height=300)
         # Log resumido
         log_ph.info(f"Concluído {i+1}/{n}: {pdfname}")
 

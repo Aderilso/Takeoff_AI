@@ -6,7 +6,7 @@ import hashlib
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
 import pdfplumber
-from PIL import Image
+from PIL import Image, ImageDraw
 import io
 
 class PDFUtils:
@@ -176,16 +176,41 @@ class PDFUtils:
             print(f"Erro ao identificar template: {e}")
             return None
 
-# Funções utilitárias para o batch runner
-def page_to_image(page, dpi: int = 150) -> Image.Image:
-    """Converte uma página pdfplumber para imagem PIL"""
-    img = page.to_image(resolution=dpi)
-    return img.original
+# Funções utilitárias para renderização consistente
+def page_to_image(page, dpi: int) -> Image.Image:
+    """Renderiza a página para PIL.Image no dpi especificado (usa pdfplumber backend)."""
+    return page.to_image(resolution=dpi).original
 
-def bbox_rel_to_px(bbox_rel: dict, width: int, height: int) -> Tuple[int, int, int, int]:
-    """Converte bbox relativo (0-1) para pixels absolutos"""
-    x0 = int(bbox_rel["x0"] * width)
-    y0 = int(bbox_rel["y0"] * height)
-    x1 = int(bbox_rel["x1"] * width)
-    y1 = int(bbox_rel["y1"] * height)
-    return (x0, y0, x1, y1)
+def render_page_pair(pdf_path, page_index: int, dpi_hd: int, preview_max_w: int = 1200):
+    """Abre PDF, renderiza a página em alta (HD) e cria um preview proporcional."""
+    with pdfplumber.open(pdf_path) as pdf:
+        page = pdf.pages[page_index]
+        img_hd = page_to_image(page, dpi_hd)
+    img_prev = img_hd.copy()
+    img_prev.thumbnail((preview_max_w, int(preview_max_w * 10000)), Image.LANCZOS)
+    return img_hd, img_prev
+
+def render_pdf_page(pdf_path, page_index: int, dpi: int = 400) -> Image.Image:
+    """Renderiza uma página específica do PDF em DPI especificado."""
+    with pdfplumber.open(pdf_path) as pdf:
+        page = pdf.pages[page_index]
+        return page_to_image(page, dpi)
+
+def bbox_rel_to_px(bbox_rel, w: int, h: int):
+    """Converte frações (x0,y0,x1,y1) em pixels (top-left)."""
+    x0 = max(0, min(w, int(round(bbox_rel["x0"] * w))))
+    y0 = max(0, min(h, int(round(bbox_rel["y0"] * h))))
+    x1 = max(0, min(w, int(round(bbox_rel["x1"] * w))))
+    y1 = max(0, min(h, int(round(bbox_rel["y1"] * h))))
+    if x1 < x0: x0, x1 = x1, x0
+    if y1 < y0: y0, y1 = y1, y0
+    return x0, y0, x1, y1
+
+def draw_overlay(img: Image.Image, bbox_rel) -> Image.Image:
+    """Devolve uma cópia com o retângulo desenhado (debug)."""
+    w, h = img.size
+    x0, y0, x1, y1 = bbox_rel_to_px(bbox_rel, w, h)
+    im = img.copy()
+    dr = ImageDraw.Draw(im)
+    dr.rectangle([(x0, y0), (x1, y1)], outline=(255, 75, 75), width=5)
+    return im

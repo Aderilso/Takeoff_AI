@@ -1,10 +1,8 @@
 from pathlib import Path
 from PIL import Image
 from datetime import datetime
-
-# Definir CROPS_DIR diretamente para evitar import circular
-BASE_DIR = Path(__file__).resolve().parents[1]
-CROPS_DIR = BASE_DIR / "Crop"
+from app.paths import CROPS_DIR, OUT_DIR
+from app.pdf_utils import bbox_rel_to_px, draw_overlay
 
 def sanitize_stem(stem: str) -> str:
     # remove caracteres ruins para nome de arquivo
@@ -13,19 +11,26 @@ def sanitize_stem(stem: str) -> str:
         stem = stem.replace(ch, "_")
     return stem.strip()
 
-def crop_filename(pdf_name: str, page_idx: int | None = None) -> Path:
+def save_crop_image(img_hd: Image.Image, bbox_rel: dict, base_name: str, page_index: int) -> Path:
     """
-    Ex.: ARG-CE_crop.jpg ou ARG-CE_p0_crop.jpg se page_idx fornecido.
+    Corta na imagem HD usando bbox_rel (frações) e salva JPG.
+    Também salva um overlay de debug sobre a imagem HD.
     """
-    stem = sanitize_stem(Path(pdf_name).stem)
-    if page_idx is None:
-        fname = f"{stem}_crop.jpg"
-    else:
-        fname = f"{stem}_p{page_idx}_crop.jpg"
-    return CROPS_DIR / fname
-
-def save_crop_image(pil_img: Image.Image, pdf_name: str, page_idx: int | None = None) -> Path:
-    path = crop_filename(pdf_name, page_idx)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    pil_img.save(path, format="JPEG", quality=95)
-    return path
+    # Sanitizar nome do arquivo
+    clean_name = sanitize_stem(base_name)
+    
+    w, h = img_hd.size
+    x0, y0, x1, y1 = bbox_rel_to_px(bbox_rel, w, h)
+    crop = img_hd.crop((x0, y0, x1, y1))
+    
+    CROPS_DIR.mkdir(parents=True, exist_ok=True)
+    out = CROPS_DIR / f"{clean_name}_p{page_index}_crop.jpg"
+    crop.save(out, quality=95, optimize=True)
+    
+    # overlay debug em HD
+    dbg = draw_overlay(img_hd, bbox_rel)
+    dbg_out = OUT_DIR / f"{clean_name}_p{page_index}_overlay_hd.jpg"
+    dbg_out.parent.mkdir(parents=True, exist_ok=True)
+    dbg.save(dbg_out, quality=85)
+    
+    return out

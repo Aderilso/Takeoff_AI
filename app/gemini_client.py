@@ -10,14 +10,48 @@ from PIL import Image
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
+DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 
 # Prompt compartilhado para extração de tabelas
 SHARED_PROMPT = (
-    "Você é um extrator de TABELAS genérico. Retorne ESTRITAMENTE JSON no envelope "
-    "{\"tables\":[{\"name\":...,\"columns_detected\":...,\"rows\":[{...}]}]}. "
-    "Mapeie sinônimos (material/descricao/dimensoes_unidade/qtd/peso_unidade_kg/peso_total_kg). "
-    "Quando não existir, use null. Sem texto fora do JSON."
+  "Você verá uma IMAGEM contendo uma ou mais TABELAS de uma lista de materiais e possivelmente "
+  "uma seção textual ('DADOS DO PROJETO'). EXTRAIA TODO O CONTEÚDO visível dentro do recorte.\n\n"
+
+  "INSTRUÇÕES DE EXTRAÇÃO:\n"
+  "1) Detecte TODAS as tabelas presentes no recorte. Para cada tabela:\n"
+  "   • Detecte o cabeçalho (ex.: 'TELHAS E ACESSÓRIOS', 'ESTRUTURA DE APOIO').\n"
+  "   • Normalize os nomes das colunas para snake_case em português, preservando significado.\n"
+  "     Exemplos comuns: material, descricao, dimensoes_unidade, qtd, peso_unidade_kg, peso_total_kg.\n"
+  "   • Extraia TODAS as linhas exatamente como aparecem (preserve unidades, símbolos, vírgulas, aspas).\n"
+  "   • Não invente valores; se a célula estiver vazia, use null.\n"
+  "2) Se existir uma seção textual como 'DADOS DO PROJETO', extraia cada bullet/linha como um item em 'project_data'.\n"
+  "3) Responda ESTRITAMENTE em JSON (application/json). Não use cercas de código.\n\n"
+
+  "FORMATO DE RESPOSTA OBRIGATÓRIO:\n"
+  "{\n"
+  '  "tables": [\n'
+  "    {\n"
+  '      "header_in_image": "TELHAS E ACESSÓRIOS",\n'
+  '      "name": "telhas_e_acessorios",\n'
+  '      "columns_detected": ["material","descricao","dimensoes_unidade","qtd"],\n'
+  '      "rows": [\n'
+  "        {\"material\":\"...\",\"descricao\":\"...\",\"dimensoes_unidade\":\"...\",\"qtd\":\"...\"}\n"
+  "      ]\n"
+  "    },\n"
+  "    {\n"
+  '      "header_in_image": "ESTRUTURA DE APOIO",\n'
+  '      "name": "estrutura_de_apoio",\n'
+  '      "columns_detected": ["material","descricao","dimensoes_unidade_mm","peso_unidade_kg","qtd","peso_total_kg"],\n'
+  '      "rows": [\n'
+  "        {\"material\":\"...\",\"descricao\":\"...\",\"dimensoes_unidade_mm\":\"...\",\"peso_unidade_kg\":\"...\",\"qtd\":\"...\",\"peso_total_kg\":\"...\"}\n"
+  "      ]\n"
+  "    }\n"
+  "  ],\n"
+  '  "project_data": [ "linha 1", "linha 2", {"area_superficies":{"piso_interno":"...","teto":"..."}} ],\n'
+  '  "notes": [],\n'
+  '  "warnings": []\n'
+  "}\n"
+  "REGRAS: Sem texto fora do JSON. Mantenha unidades como na imagem. Se uma coluna não existir para uma tabela, simplesmente não inclua.\n"
 )
 
 def _ensure_pil(img: Union[Image.Image, bytes, bytearray, str, os.PathLike]) -> Image.Image:

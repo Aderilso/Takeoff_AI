@@ -38,5 +38,15 @@
     "use_count": 0,
     "active": true,
     "notes": "Criado na página 1"
+  },
+  {
+    "id": "972a7d14-0c19-4281-a5e9-3403d011c7dc",
+    "name": "Teste",
+    "scope": "global",
+    "bbox_rel": null,
+    "template_name": "",
+    "pdf_name": "",
+    "active": true,
+    "created_at": "2025-08-30T19:17:27.726238"
   }
 ]
